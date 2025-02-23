@@ -1,67 +1,13 @@
 import { useState } from 'react'
 import { Canvas } from '@react-three/fiber'
-import { ARButton, XR, Interactive, useXR } from '@react-three/xr'
-import { OrbitControls, useGLTF } from '@react-three/drei'
-
-function ChairModel({ position = [0, 0, 0] }) {
-  const { scene } = useGLTF('/models/chair.glb')
-  
-  return (
-    <primitive 
-      object={scene} 
-      position={position}
-      scale={[1.5, 1.5, 1.5]}
-      rotation={[0, Math.PI / 2, 0]}
-    />
-  )
-}
-
-function PlacementIndicator({ onSelect }) {
-  const { isPresenting } = useXR()
-  
-  if (!isPresenting) return null
-
-  return (
-    <Interactive onSelect={onSelect}>
-      <mesh rotation-x={-Math.PI / 2}>
-        <ringGeometry args={[0.1, 0.15, 32]} />
-        <meshBasicMaterial color="#ffffff" opacity={0.5} transparent />
-      </mesh>
-    </Interactive>
-  )
-}
-
-function Scene() {
-  const [placedObjects, setPlacedObjects] = useState([])
-  const { isPresenting } = useXR()
-
-  const handleSelect = (event) => {
-    if (!event.intersection) return
-    const position = event.intersection.point
-    setPlacedObjects((prev) => [...prev, position])
-  }
-
-  return (
-    <>
-      <ambientLight intensity={0.5} />
-      <pointLight position={[5, 5, 5]} intensity={1} />
-      
-      {isPresenting ? (
-        <>
-          <PlacementIndicator onSelect={handleSelect} />
-          {placedObjects.map((position, index) => (
-            <ChairModel key={index} position={position} />
-          ))}
-        </>
-      ) : (
-        <ChairModel position={[0, 0, 0]} />
-      )}
-      <OrbitControls />
-    </>
-  )
-}
+import { ARButton, XR } from '@react-three/xr'
+import { useGLTF } from '@react-three/drei'
+import ARScene from './ARScene'
+import ModelInventory from './ModelInventory'
 
 function ARView() {
+  const [selectedModel, setSelectedModel] = useState(null)
+
   return (
     <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
       <div style={{ 
@@ -84,15 +30,38 @@ function ARView() {
         />
       </div>
 
-      <Canvas style={{ width: '100%', height: '100%' }}>
+      {/* Instructions */}
+      <div style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1000,
+        background: 'rgba(0,0,0,0.7)',
+        color: 'white',
+        padding: '10px',
+        borderRadius: '4px'
+      }}>
+        Tap to place • Tap chair to rotate
+      </div>
+
+      <Canvas
+        style={{ width: '100%', height: '100%' }}
+        gl={{
+          alpha: true,
+          antialias: true,
+          preserveDrawingBuffer: true
+        }}
+        camera={{ position: [0, 1.5, 3] }}
+      >
         <XR>
-          <Scene />
+          <ARScene selectedModel={selectedModel} />
         </XR>
       </Canvas>
+
+      <ModelInventory onSelectModel={setSelectedModel} />
     </div>
   )
 }
-
-useGLTF.preload('/models/chair.glb')
 
 export default ARView 
