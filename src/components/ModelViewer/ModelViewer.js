@@ -9,6 +9,7 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
   const [ARSupported, setARSupported] = useState(false);
   const [annotate, setAnnotate] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const [collisionDetected, setCollisionDetected] = useState(false);
   
   
   let modelViewer1 = {
@@ -26,35 +27,98 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
   // Accessing varient selections element
   const varient = useRef(null);
 
+  const collisionTimeout = useRef(null);
+
   console.log(item)
 
   function toggle() {
     if (!document.fullscreenElement) {
-      model.current.requestFullscreen();
-    } else if (document.exitFullscreen) document.exitFullscreen();
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
   }
   // Full screen code end
 
 
   const handleAnnotateClick = (annotation) => {
-    const { orbit, target, position } = annotation;
-    model.current.cameraTarget = position;
-    model.current.orbit = target
+    const modelViewer = model.current;
+    if (modelViewer) {
+      modelViewer.cameraOrbit = annotation.orbit;
+      modelViewer.cameraTarget = annotation.target;
+    }
   }
 
   useEffect(() => {
-    if (
-      navigator.userAgent.match(/iPhone/i) ||
-      navigator.userAgent.match(/webOS/i) ||
-      navigator.userAgent.match(/Android/i) ||
-      navigator.userAgent.match(/iPad/i) ||
-      navigator.userAgent.match(/iPod/i) ||
-      navigator.userAgent.match(/BlackBerry/i) ||
-      navigator.userAgent.match(/Windows Phone/i)
-    ) {
-      setARSupported(true);
+    if (model.current) {
+      const modelViewer = model.current;
+      
+      // Check if AR is supported
+      if (modelViewer.canActivateAR) {
+        setARSupported(true);
+      }
+
+      // Add collision detection
+      modelViewer.addEventListener('ar-status', (event) => {
+        if (event.detail.status === 'session-started') {
+          // Start collision detection when AR session starts
+          modelViewer.addEventListener('ar-tracking', (trackingEvent) => {
+            if (trackingEvent.detail.status === 'tracking') {
+              // Check for collisions with other AR objects
+              const arObjects = document.querySelectorAll('model-viewer[ar]');
+              arObjects.forEach((otherObject) => {
+                if (otherObject !== modelViewer) {
+                  const distance = calculateDistance(modelViewer, otherObject);
+                  if (distance < 0.5) { // 0.5 meters threshold
+                    handleCollision();
+                  }
+                }
+              });
+            }
+          });
+        }
+      });
     }
   }, []);
+
+  const calculateDistance = (obj1, obj2) => {
+    const pos1 = obj1.getAttribute('position');
+    const pos2 = obj2.getAttribute('position');
+    if (!pos1 || !pos2) return Infinity;
+
+    const [x1, y1, z1] = pos1.split(' ').map(Number);
+    const [x2, y2, z2] = pos2.split(' ').map(Number);
+
+    return Math.sqrt(
+      Math.pow(x2 - x1, 2) + 
+      Math.pow(y2 - y1, 2) + 
+      Math.pow(z2 - z1, 2)
+    );
+  };
+
+  const handleCollision = () => {
+    setCollisionDetected(true);
+    
+    // Clear previous timeout
+    if (collisionTimeout.current) {
+      clearTimeout(collisionTimeout.current);
+    }
+
+    // Add visual feedback
+    const modelViewer = model.current;
+    if (modelViewer) {
+      modelViewer.style.border = '2px solid red';
+      modelViewer.style.transition = 'border-color 0.3s ease';
+    }
+
+    // Reset after 2 seconds
+    collisionTimeout.current = setTimeout(() => {
+      setCollisionDetected(false);
+      if (modelViewer) {
+        modelViewer.style.border = 'none';
+      }
+    }, 2000);
+  };
 
   useEffect(() => {
     // set up event listeners
@@ -198,6 +262,7 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
               </div>
               <div>Rs. 1000</div>
               {!ARSupported && <h5>Scan the QR code to view {item.name} in AR on your mobile device</h5>}
+              {collisionDetected && <div className="collision-warning">⚠️ Collision detected!</div>}
             </div>
             {addToWishlist && removeFromWishlist && (
               <button className="add-icon" onClick={handleAddToWishlist}>
