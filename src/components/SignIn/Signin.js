@@ -1,73 +1,68 @@
-import React, { useState } from "react";
-import "./SignIn.css";
-import { Link } from "react-router-dom";
+import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import './SignIn.css';
+
 const SignIn = () => {
-    const [ error,setError ] = useState('')
-    const [ signInDetails,setSignInDetails ] = useState({
-        email:'',
-        password:'',
-    })
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
-    const handleOnchange = (e) => {
-        setSignInDetails({
-            ...signInDetails,
-            [e.target.name]: e.target.value
-        })
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    try {
+      const success = login(email, password);
+      if (success) {
+        navigate('/'); // Redirect to home page after successful login
+      } else {
+        setError('Invalid email or password');
+      }
+    } catch (err) {
+      setError('Failed to login. Please try again.');
     }
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if(signInDetails.email === '' || signInDetails.password === '' ){
-            setError('please fill in all the required field')
-            return
-        }
-
-  
-        console.log(signInDetails)
-        setSignInDetails({
-            email: '',
-            password:'',
-        })
-        setError('')
-        
-
-    }
+  };
 
   return (
-    <main className="main-sign_in_container">
-        <form onSubmit={handleSubmit} className="sign-in-container">
-        <p className="error-paragraph">{error !== '' ? `Error: ${error}` : null}</p>
-        <h3>Sign in</h3>
-           
-            <div className="input-div">
-            <label htmlFor="email">
-                Email
-            </label>
-            <input name="email" id="email" type="email"
-            placeholder="Enter you email" 
-            onChange={handleOnchange}
-            value={signInDetails.email}
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Sign In</h2>
+        {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleSubmit}>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Enter your email"
             />
-            </div>
-            <div className="input-div">
-            <label htmlFor="password">
-                password
-            </label>
-            <input name="password" id="password" type="password"
-            placeholder="Enter your password"
-            onChange={handleOnchange}
-            value={signInDetails.password}
+          </div>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="Enter your password"
             />
-            <Link to={'#'} className="forgot-pass">forgot password?</Link>
-            </div>
-            <button className="sign-in-button">
-                Sign in
-            </button>
-            <p className="sign-in-redirect-p">Don't have an account? <Link to="/sign-up">Sign up</Link></p>
-    </form>
-    </main>
-    
-
+          </div>
+          <button type="submit" className="auth-button">
+            Sign In
+          </button>
+        </form>
+        <p className="auth-link">
+          Don't have an account? <Link to="/sign-up">Sign Up</Link>
+        </p>
+      </div>
+    </div>
   );
 };
 

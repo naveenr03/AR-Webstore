@@ -174,7 +174,7 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
           {!ARSupported && (
             <QRCode
               id={item.name}
-              value={window.location.href}
+              value={`https://98c9-182-66-218-119.ngrok-free.app/?ar=true&model=${item.id}`}
               size={110}
               bgColor="#ffffff"
               fgColor="#000000"
@@ -197,11 +197,13 @@ const ModelViewer = ({ item, addToWishlist, removeFromWishlist, wishlist }) => {
                 </div>
               </div>
               <div>Rs. 1000</div>
-              {!ARSupported && <h5>Scan the QR code for AR View on mobile</h5>}
+              {!ARSupported && <h5>Scan the QR code to view {item.name} in AR on your mobile device</h5>}
             </div>
-            <button className="add-icon" onClick={handleAddToWishlist}>
-              {isInWishlist ? '-' : '+'}
-            </button>
+            {addToWishlist && removeFromWishlist && (
+              <button className="add-icon" onClick={handleAddToWishlist}>
+                {isInWishlist ? '-' : '+'}
+              </button>
+            )}
           </div>
         </div>
       </LazyLoad>
