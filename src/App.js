@@ -13,7 +13,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ModelViewer from "./components/ModelViewer/ModelViewer";
 import productItems from "./data/ProductItems";
 
-const App = () => {
+const AppContent = () => {
   const [wishlist, setWishlist] = useState([]);
   const [searchParams] = useSearchParams();
   const arMode = searchParams.get('ar') === 'true';
@@ -42,43 +42,49 @@ const App = () => {
 
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Header />
-        <Routes>
-          <Route
-            path="/"
-            element={
-              arMode && modelId ? (
-                <div className="ar-container">
-                  <ModelViewer 
-                    item={productItems.find(item => item.id === parseInt(modelId))}
-                    addToWishlist={addToWishlist}
-                    removeFromWishlist={handleRemoveItem}
-                    wishlist={wishlist}
-                  />
-                </div>
-              ) : (
-                <ProductList
+      <Header />
+      <Routes>
+        <Route
+          path="/"
+          element={
+            arMode && modelId ? (
+              <div className="ar-container">
+                <ModelViewer 
+                  item={productItems.find(item => item.id === parseInt(modelId))}
                   addToWishlist={addToWishlist}
-                  wishlist={wishlist}
                   removeFromWishlist={handleRemoveItem}
+                  wishlist={wishlist}
                 />
-              )
-            }
-          />
-          <Route path="/sign-in" element={<SignIn />} />
-          <Route path="/sign-up" element={<SignUp />} />
-          <Route
-            path="/wishlist"
-            element={
-              <WishList wishlist={wishlist} onRemoveItem={handleRemoveItem} />
-            }
-          />
-          <Route path="*" element={<ErrorPage />} />
-        </Routes>
-        <Footer />
-      </BrowserRouter>
+              </div>
+            ) : (
+              <ProductList
+                addToWishlist={addToWishlist}
+                wishlist={wishlist}
+                removeFromWishlist={handleRemoveItem}
+              />
+            )
+          }
+        />
+        <Route path="/sign-in" element={<SignIn />} />
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route
+          path="/wishlist"
+          element={
+            <WishList wishlist={wishlist} onRemoveItem={handleRemoveItem} />
+          }
+        />
+        <Route path="*" element={<ErrorPage />} />
+      </Routes>
+      <Footer />
     </AuthProvider>
+  );
+};
+
+const App = () => {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 };
 
